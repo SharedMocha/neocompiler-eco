@@ -7,9 +7,9 @@ set timeout -1
 cd $dnpath
 
 if { $rpcFlag == "callRPC" } {
-	spawn dotnet neo-cli.dll --rpc --log
+	spawn dotnet neo-cli.dll --rpc
 } else {
-	spawn dotnet neo-cli.dll --log
+	spawn dotnet neo-cli.dll
 }
 
 expect "neo>"
@@ -18,6 +18,6 @@ expect "password:"
 send "$password\n"
 expect "neo>"
 send "start consensus\n"
-expect "OnStart"
+#expect "OnStart"
 #expect "LIVEFOREVER"
 interact

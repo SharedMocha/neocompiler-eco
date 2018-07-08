@@ -11,6 +11,10 @@ services:
     image: eco-neo-csharp-nodes:latest
     container_name: "eco-neo-csharp-nodes-running"
     ports:
+      - "10333:10333"
+      - "10334:10334"
+      - "10335:10335"
+      - "10336:10336"
       - "20333:20333"
       - "20334:20334"
       - "20335:20335"
