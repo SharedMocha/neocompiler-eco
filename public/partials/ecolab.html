@@ -2,7 +2,7 @@
     <div class="row">
         <div class="col-lg-12">
             <ol class="breadcrumb">
-                <li><a href="../index.html">Home</a>
+                <li><a href="/index.html">Home</a>
                 </li>
                 <li class="active">EcoLab (Neo Ecosystem Laboratory)</li>
             </ol>
@@ -17,10 +17,11 @@
         <div class="col-sm-2 sidenav">
             <ul class="nav nav-pills nav-stacked" id="pillstab">
               <li class="active"><a data-target="#compilers" data-toggle="tab">Compilers</a></li>
-              <li><a data-target="#network" data-toggle="tab">Network</a></li>
+              <li><a data-target="#network" data-toggle="tab">Network Essentials</a></li>
               <li><a data-target="#transaction"  data-toggle="tab">Transaction Build</a></li>
-              <li><a data-target="#wallet"  data-toggle="tab" onclick="populateWalletData()">Wallets</a></li>
+              <li><a data-target="#wallet"  data-toggle="tab" onclick="populateAllWalletData()">Wallets</a></li>
               <li><a data-target="#conversor" data-toggle="tab">Conversors</a></li>
+              <li><a data-target="#pythonnotification"  data-toggle="tab">PythonNotifications</a></li>
               <li><a data-target="#nodeinfo"  data-toggle="tab">NodeInfo</a></li>
             </ul>
         </div>
@@ -177,7 +178,7 @@
                 <!-- ======================================================== -->
                 <!-- BEGIN DIV TRANSACTION -->
                 <div class="tab-pane fade" id="transaction">
-                  <div class="panel panel-primary">
+                  <div class="panel panel-primary" id="divFormJsonOut">
                       <div class="panel-heading">Invoke neo nodes (JSON RPC)</div>
                       <div class="panel-body">
                           <form id="frmRPCJson" action="">
@@ -436,14 +437,24 @@
                     <div class="panel panel-info">
                         <div class="panel-heading">Known addresses</div>
                         <div class="panel-body">
-                            <button type="submit" onClick="populateWalletData()" id="btnReloadall" style="margin-bottom: 10px;" class="btn btn-info btn-sm">Check addresses</button>
-                            <i>If you want to access UNCLAIMABLE->CLAIMABLE gas, please click in the arrow (it will self-transfer all NEO to that wallet), claim will be done automatically</i>
+                            <button type="submit" onClick="populateAllWalletData()" id="btnReloadall" style="margin-bottom: 10px;" class="btn btn-info btn-sm">Check addresses</button> <br>
+                            <i>By clicking in the arrow it will self-transfer all NEO to that wallet, accessing UNCLAIMABLE->CLAIMABLE gas, claim will be done automatically</i>
                             <div id="divWalletsStatus" class="table-responsive"></div>
+                            address: <input type="text" name="addressToAddBox" id="addressToAddBox" maxlength="50" value="PubAddress to Add" size="30" title="public address"/> &nbsp; &nbsp;
+                            WIF: <input type="text" name="wifToAddBox" id="wifToAddBox" maxlength="50" value="WIF to Add" size="30" /> <br>
+                            <button type="button" onClick="addWallet()" id="btnNewWallet" class="btn btn-success btn-sm">Add Wallet</button>
                         </div>
                     </div>
-                    <div class="row">
-                        <button type="button" onClick="showPersistWallet()" id="btnNewWallet" class="btn btn-success btn-sm">Add Wallet</button>
-                    </div> <br>
+                    <div class="panel panel-info">
+                        <div class="panel-heading">Wallets detailed info</div>
+                        <select name="wallet_info" onChange="changeWalletInfo();" id="wallet_info" class="custom-select form-control"></select>
+                        <div class="panel-body">
+                            <strong>Address</strong><input id="walletInfoAddressBase58" readonly="readonly" name="infoAddressBase58" placeholder="infoAddressBase58 (Pick a wallet id)" style="width: 100%; margin-bottom: 10px;"/>
+                            <strong>Publickey</strong><input id="walletInfoPubKey" readonly="readonly" name="infoPubKey" placeholder="infoPubKey (Pick a wallet id)" style="width: 100%; margin-bottom: 10px;"/>
+                            <strong>WIF</strong><input id="walletInfoWIF" readonly="readonly" name="infoWIF" placeholder="infoWIF (Pick a wallet id)" style="width: 100%; margin-bottom: 10px;"/>
+                        </div>
+                    </div>
+                    <!--
                     <div class="row">
                       <div class="col-sm-6">
                         <div class="card">
@@ -496,6 +507,7 @@
                         </div>
                       </div>
                     </div><br>
+                    -->
            </div>
            <!-- END DIV WALLETS INFO -->
            <!-- ======================================================== -->
@@ -560,6 +572,28 @@
           <!-- END DIV NODES INFO -->
           <!-- ======================================================== -->
 
+          <!-- ======================================================== -->
+          <!-- BEGIN PYTHON NOTIFICATIONS -->
+           <div class="tab-pane fade" id="pythonnotification">
+               <div class="row">
+                   <div class="col-md-2 pull-left">
+                       <button type="submit" onClick="getPythonNotificationsInfo()" class="btn btn-info btn-sm">Reload all system notifications</button>
+                   </div>
+               </div>
+
+               <div class="panel panel-primary">
+                   <div class="panel-heading">Python client notifications logger</div>
+                   <div class="panel-body">
+                     <div class="row">
+                       <div class="col-md-12">
+                          <textarea id="textAreaOfAllPythonNotifications" readonly="readonly" style="font-size: 15px;" rows="15" cols="100" placeholder="Python Runtime.Notify messages..." class="form-control"></textarea><br>
+                        </div>
+                      </div>
+                   </div>
+               </div>
+           </div>
+         <!-- END DIV PYTHON NOTIFICATIONS -->
+         <!-- ======================================================== -->
 
           <!-- ======================================================== -->
           <!-- BEGIN DIV COMPILERS -->
@@ -567,7 +601,7 @@
                     <div class="panel panel-success">
                         <div class="panel-heading">Compile</div>
                         <div class="panel-body">
-                            <form id="formCompile" action="/compilex" style="margin-top: 10px;" method="post">
+                            <form id="formCompile" action="" style="margin-top: 10px;" method="post">
                                 <div class="tab-container">
                                     <ul class="nav nav-tabs">
                                         <li class="active"><a data-target="#csharpcode" data-toggle="tab">C#</a></li>
@@ -592,6 +626,7 @@
                                                         <li><a onclick="setExample('3')">Lock.cs</a></li>
                                                         <li><a onclick="setExample('4')">StructExample.cs</a></li>
                                                         <li><a onclick="setExample('5')">MapExample.cs</a></li>
+                                                        <li><a onclick="setExample('6')">HelloWorldNotification.cs</a></li>
                                                     </ul>
                                                 </div>
                                                 <input type="hidden" id="code_cs" name="codesend_cs"/>
@@ -736,7 +771,7 @@ def Main():
         <div class="tab-pane fade" id="network">
 
           <div class="panel panel-warning">
-              <div class="panel-heading">Deploy contract to private net</div>
+              <div class="panel-heading">Deploy contract into the Blockchain</div>
               <div class="panel-body">
 
                 <div class="tab-container">
@@ -760,12 +795,12 @@ def Main():
 
                               <div class="col-md-6">
                                 <div class="form-group">
-                                  <label for="contractparams">Params</label>
+                                  <label for="contractparams">Deploy Params</label>
                                   <input id="contractparamsjs" name="contractparams" value='' class="form-control" placeholder="Parameters (without quotes)" style="width: 100%">
                                 </div>
                               </div>
 
-                              <div class="col-md-12 form-inline" style="margin-bottom: 10px">
+                              <div class="col-md-6 form-inline" style="margin-bottom: 10px">
                                 <div class="form-group">
                                   <select name="contractreturn" id="contractreturnjs" class="custom-select form-control" data-toggle="tooltip" data-placement="top" title="Signature (00), Boolean (01), Integer (02), Hash160 (03), Hash256 (04), ByteArray (05), PublicKey (06), String (07), Array (10), InteropInterface (f0), Void (ff).">
                                     <option>00</option>
@@ -798,6 +833,11 @@ def Main():
                                     </label>
                                   </div>
                                 </div>
+                              </div>
+
+                              <div class="col-md-6">
+                                 <label for="contractparamnames">Param Type Names</label>
+                                 <input id="contractparamnamesjs" name="contractparamnames" value='' class="form-control" placeholder="Parameters (without quotes)" style="width: 100%" disabled>
                               </div>
 
                               <div class="col-md-12">
@@ -881,7 +921,7 @@ def Main():
 
 
           <div class="panel panel-warning">
-              <div class="panel-heading">Invoke contract in private/testnet</div>
+              <div class="panel-heading">Interacting with a Smart Contract - Invoke</div>
               <div class="panel-body">
 
                 <div class="tab-container">
@@ -912,25 +952,28 @@ def Main():
                              </div>
                            </div>
                         </div>
+
                         <div class="row">
-                           <div class="col-md-6">
-                             <div class="form-group">
-                               <label for="invokehashjs">Contract</label>
-                               <input id="invokehashjs" name="invokehashjs" class="form-control" placeholder="Script Hash"/>
+                          <div class="col-md-6">
+                            <div class="form-group">
+                               <label for="invokehashjs">Contract ScriptHash</label>
+                               <input id="invokehashjs" name="invokehashjs" class="form-control" placeholder="Script Hash" style="width: 100%; margin-bottom: 10px;"/>
                              </div>
                            </div>
+
                            <div class="col-md-6">
                              <div class="form-group">
                                <label for="invokeparamsjs">Params</label>
-                               <textarea id="invokeparamsjs" name="invokeparamsjs" class="form-control" value='' placeholder="Script Params"></textarea>
+                               <input id="invokeparamsjs" name="invokeparamsjs" class="form-control" value='' placeholder="Invoke Parameters" style="width: 100%"></textarea>
                              </div>
                            </div>
                         </div>
+
                         <div class="row">
                                  <div class="col-md-3">
                                    <div class="form-group">
-                                     <label for="invokefunctionjs">Function to Invoke</label>
-                                     <select id="invokefunctionjs" class="custom-select form-control">
+                                     <label for="invokefunctionjs">Function to Invoke</label> <input type="checkbox" id="cbx_usearray_js" checked onchange="updateArrayInvokeParamsJs()"/> use param array<br/>
+                                     <select id="invokefunctionjs" class="custom-select form-control" onchange="updateInvokeParamsJs()">
                                          <option>Main</option>
                                      </select>
                                    </div>
@@ -1127,15 +1170,15 @@ def Main():
 
 
           <div class="panel panel-info">
-              <div class="panel-heading">Private Net TX's</div>
+              <div class="panel-heading">Relayed TX's informative table</div>
               <div class="panel-body">
-                  <button type="submit" onClick="searchForTXs()" id="btndrawRelayedTXs" style="margin-bottom: 10px;" class="btn btn-success btn-sm">Check TXs status</button><br>
+                  <button type="submit" onClick="searchForTXs()" id="btndrawRelayedTXs" style="margin-bottom: 10px;" class="btn btn-success btn-sm">Reload TX's status</button><br>
                   <div id="divRelayedTXs" class="table-responsive"></div>
               </div>
           </div>
 
           <div class="panel panel-info">
-              <div class="panel-heading">Read Contract Storage</div>
+              <div class="panel-heading">Read storage from a Smart Contract</div>
               <div class="panel-body">
                   <form id="formgetstorage" method="post">
                       <label for="gsf_contracthash">ScriptHash</label>
@@ -1166,19 +1209,6 @@ def Main():
               </div>
           </div>
 
-          <div class="panel panel-info">
-              <div class="panel-heading">Python Client Messages</div>
-              <div class="panel-body">
-                  <center><a href="/notifications" target="_blank">View all system notifications</a></center>
-                  <form id="formprivatenet" method="post">
-                      <textarea id="contractmessages" readonly="readonly" style="font-size: 12px;" rows="15" cols="100" placeholder="Contract messages..." class="form-control"></textarea><br>
-                      <textarea id="contractmessagesnotify" readonly="readonly" style="font-size: 12px;" rows="5" cols="100" placeholder="Contract messages Notify..." class="form-control"></textarea><br>
-                  </form>
-              </div>
-          </div>
-
-
-
         </div>
 
       </div> <!-- TAB PANNEL -->
@@ -1197,42 +1227,13 @@ def Main():
   <!-- ======================================================== -->
   <!-- ======================================================== -->
 
-    <div id="persistWallet" class="modal fade" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title">New Wallet</h4>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="persistWalletName">Name</label>
-                        <input type="text" id="persistWalletName" class="form-control" />
-                    </div>
-                    <div class="form-group">
-                        <label for="persistWalletHash">Base58 Address</label>
-                        <input type="text" id="persistWalletHash" class="form-control" placeholder="ex: AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y. TODO: pass publickey (for view-only) or NEP-2 privatekey"  />
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="submitPersistWallet">Create</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-    <script src="js/common/neoEditorScripts.js"></script>
-    <script src="js/common/wallet_AutomaticClaimAndSend.js"></script>
-    <script src="js/common/pythonEco.js"></script>
+    <script src="public/js/common/neoEditorScripts.js"></script>
+    <script src="public/js/common/wallet_AutomaticClaimAndSend.js"></script>
+    <script src="public/js/common/pythonEco.js"></script>
 
     <script>
-        //Adding all known address to NeonInvokeSelectionBox
-        addAllKnownAddressesToSelectionBox("wallet_invokejs");
-        addAllKnownAddressesToSelectionBox("wallet_deployjs");
-
         function addAllKnownAddressesToSelectionBox(walletSelectionBox){
+          document.getElementById(walletSelectionBox).options.length = 0;
           for(ka = 0; ka < KNOWN_ADDRESSES.length; ++ka)
             addOptionToWalletToInvoke("wallet_"+ka,"wallet_"+ka,walletSelectionBox);
         }
@@ -1245,22 +1246,22 @@ def Main():
           select.appendChild(option);
         }
 
-
-
         var editorPython = createEditor("editorPython", "ace/mode/python");
         var editorGolang = createEditor("editorGolang", "ace/mode/golang");
         var editorCSharp = createEditor("editorCSharp", "ace/mode/csharp");
         var editorJava = createEditor("editorJava", "ace/mode/java");
         var cSharpFiles = [
-            ["https://raw.githubusercontent.com/NeoResearch/examples-csharp/master/HelloWorld/HelloWorld.cs"],
-            ["https://raw.githubusercontent.com/NeoResearch/examples-csharp/master/ICO_Template/ICO_Template.cs"],
-            ["https://raw.githubusercontent.com/NeoResearch/examples-csharp/create_checkwitness/MyCheckWitness/MyCheckWitness.cs"],
-            ["https://raw.githubusercontent.com/NeoResearch/examples-csharp/master/Lock/Lock.cs"],
+            //["https://raw.githubusercontent.com/NeoResearch/examples-csharp/master/HelloWorld/HelloWorld.cs"],
+            ["/examples/csharp/HelloWorld/HelloWorld.cs"],
+            ["/examples/csharp/ICO_Template/ICO_Template.cs"],
+            ["/examples/csharp/MyCheckWitness/MyCheckWitness.cs"],
+            ["/examples/csharp/Lock/Lock.cs"],
             [
-                "https://raw.githubusercontent.com/neo-project/examples-csharp/master/StructExample/Point.cs",
-                "https://raw.githubusercontent.com/neo-project/examples-csharp/master/StructExample/StructExample.cs"
+                "/examples/csharp/StructExample/Point.cs",
+                "/examples/csharp/StructExample/StructExample.cs"
             ],
-            ["https://raw.githubusercontent.com/neo-project/examples-csharp/master/MapExample/MapExample.cs"]
+            ["/examples/csharp/MapExample/MapExample.cs"],
+            ["/examples/csharp/HelloWorldNotification/HelloWorldNotification.cs"],
         ];
 
         var vecRelayedTXs = [];
@@ -1269,13 +1270,22 @@ def Main():
         $(document).ready(function(){
             //console.log("checking wallets");
             refreshIntervalId = setInterval(function() {
-                populateWalletData();
+                populateAllWalletData();
                 callFromAllKnownThatHasClaimable();
                 searchForTXs();
             }, 10000); // 30000 milsec
 
             recoveringPageData();
-            populateWalletData();
+            populateAllWalletData();
+
+            //Function that verifies if page is localhost or neocompiler.io, changing neocli node and calling paths
+            if(window.location.href.indexOf("localhost")  != -1)
+            {
+                $("#ecolabnetworkurlselection")[0].selectedIndex = 1; //set network to localhost
+                $("#neonodeurl")[0].value = $("#ecolabnetworkurlselection")[0].value;
+            }
+            updatePATHS();
+            startSocketIoConnections();
         });
 
         window.onbeforeunload = function(event){
@@ -1283,19 +1293,16 @@ def Main():
           return confirm("Confirm refresh");
         }
 
-        //Function that verifies if page is localhost or neocompiler.io, changing neocli node and calling paths
-        if(this.window.location.href.indexOf("localhost")  != -1)
-        {
-	          $("#ecolabnetworkurlselection")[0].selectedIndex = 1; //set network to localhost
-            $("#neonodeurl")[0].value = $("#ecolabnetworkurlselection")[0].value;
-            updatePATHS();
-        }
-
         //=============================================================
         //======== BEGIN ON CHANGE FUNCTIONS ================================
         $("#ecolabnetworkurlselection").on('change', function() {
             $("#neonodeurl")[0].value = this.value;
             updatePATHS();
+            startSocketIoConnections();
+        });
+
+        $("#neonodeurl").on('change', function() {
+            BASE_PATH_CLI = $("#neonodeurl")[0].value;
         });
 
 /*
@@ -1303,7 +1310,6 @@ def Main():
             verifyRPCNetworkForWithdrawUTXO();
         });
 */
-
         $("#createtx_input_utxo2").on('change', function() {
             console.log("input UTXO tx ID is: " + JSON.parse($("#createtx_input_utxo2").val()).txid);
         });
@@ -1328,33 +1334,42 @@ def Main():
         {
             mynetwork = $("#ecolabnetworkurlselection")[0].options[$("#ecolabnetworkurlselection")[0].selectedIndex].text;
 
+            BASE_PATH_CLI = $("#neonodeurl")[0].value; //deprecated - BASE_PATH_CLI is being used
             if(mynetwork == "localhost (privatenet)")
             {
               BASE_PATH_NEOSCAN = FIXED_NEOSCAN_LOCALHOST;
               BASE_PATH_PY = FIXED_NEOPY_NOTIFICATION_LOCALHOST;
-              BASE_PATH_CLI = $("#neonodeurl")[0].value; //deprecated - BASE_PATH_CLI is being used
+              BASE_PATH_URL = FIXED_BASE_URL_LOCALHOST;
             }
 
             if(mynetwork == "neocompiler.io (shared privatenet)")
             {
               BASE_PATH_NEOSCAN = FIXED_NEOSCAN_NEOCOMPILER;
               BASE_PATH_PY = FIXED_NEOPY_NOTIFICATION_NEOCOMPILER;
-              BASE_PATH_CLI = $("#neonodeurl")[0].value;
+              BASE_PATH_URL = FIXED_BASE_URL_NEOCOMPILER_ECO;
             }
 
             if(mynetwork == "NEO MainNet")
             {
               BASE_PATH_NEOSCAN = FIXED_NEOSCAN_MAINNET;
               BASE_PATH_PY = FIXED_NEOPY_NOTIFICATION_MAINNET;
-              BASE_PATH_CLI = $("#neonodeurl")[0].value;
             }
 
             if(mynetwork == "NEO TestNet")
             {
               BASE_PATH_NEOSCAN = FIXED_NEOSCAN_TESTNET;
               BASE_PATH_PY = FIXED_NEOPY_NOTIFICATION_TESTNET;
-              BASE_PATH_CLI = $("#neonodeurl")[0].value;
             }
+
+            if(mynetwork == "CoZ TestNet")
+            {
+              BASE_PATH_NEOSCAN = FIXED_NEOSCAN_TESTNET; //TODO
+              BASE_PATH_PY = FIXED_NEOPY_NOTIFICATION_TESTNET;  //TODO
+            }
+
+            //Update express routes
+            //$('#formCompile')[0].action
+            $('#formCompile').attr('action', BASE_PATH_URL+'/compilex');
 
             // updateHeaderNetworkInfo();
         }
@@ -1390,70 +1405,6 @@ def Main():
         function storePageData(){
           setCookie("lastactivetab", $("ul#pillstab li.active").index(), 1);
         }
-        // =======================================================================
-
-        // =======================================================================
-        // ================ BEGIN ADD NEW WALLET =================================
-        function showPersistWallet() {
-          $('#persistWallet').modal('show')
-        }
-
-        function closePersistWallet() {
-          $('#persistWalletName').val('')
-          $('#persistWalletHash').val('')
-          $('#persistWallet').modal('hide')
-        }
-
-        function persistWallet()
-        {
-          // TODO: persist into Webserver
-          var name = $('#persistWalletName').val()
-          var hash = $('#persistWalletHash').val()
-
-          var html = '<div class="panel panel-primary">' +
-            '<div class="panel-heading">'
-
-          html += name + ': ' + hash
-
-          html += '<br>' +
-            '</div>' +
-            '<div class="panel-body">' +
-            '  <textarea class="wallet-view" id="'
-
-          html += hash
-
-          html += '" style="width: 100%; height: 50px;" readonly="readonly"></textarea><br>' +
-            '  <a href=BASE_PATH_NEOSCAN + "/api/main_net/v1/get_balance/'
-
-          html += hash
-
-          html += '"' +
-            '  target="popup"' +
-            '  onclick="window.open(BASE_PATH_NEOSCAN + \'/api/main_net/v1/get_balance/'
-
-          html += hash
-
-          html += '\',\'popup\',\'width=600,height=600\'); return false;">' +
-            '  more details' +
-            '</a></div></div>'
-
-          $('#wallet').prepend(html)
-          closePersistWallet()
-
-          populatePersistedWalletData(hash)
-        }
-
-        function populatePersistedWalletData(hash) {
-          console.log(hash)
-          url = BASE_PATH_NEOSCAN + "/api/main_net/v1/get_balance/" + hash
-          $.getJSON(url, function(result) {
-            var data = "";
-            data += result.balance[0].amount + " " + result.balance[0].asset + "\n";
-            data += result.balance[1].amount + " " + result.balance[1].asset + "\n";
-            $("#" + hash).val(data);
-          });
-        }
-        // ================ BEGIN ADD NEW WALLET =================================
         // =======================================================================
 
         function Disassembly() {
@@ -1864,26 +1815,21 @@ def Main():
             printOpcode(hexavm, $("#createtx_from_verification_opcodes"));
         });
 
-        $('#submitPersistWallet').click(function (e) {
-          persistWallet();
-        });
-
         //This uses local routes
         function getNodeInfo()
         {
-           var net = "https://neocompiler.io";
-           if(this.window.location.href.indexOf("localhost")  != -1)
-               net = "http://localhost:8000";
-
-           $.get(net+'/statusnode1', function (data) { $("#node1data").val(data.replace(/[^\x00-\x7F]/g, "")); } );
-           $.get(net+'/statusnode2', function (data) { $("#node2data").val(data.replace(/[^\x00-\x7F]/g, "")); } );
-           $.get(net+'/statusnode3', function (data) { $("#node3data").val(data.replace(/[^\x00-\x7F]/g, "")); } );
-           $.get(net+'/statusnode4', function (data) { $("#node4data").val(data.replace(/[^\x00-\x7F]/g, "")); } );
-
-           $("#node1data").scrollTop($("#node1data")[0].scrollHeight);
-           $("#node2data").scrollTop($("#node2data")[0].scrollHeight);
-           $("#node3data").scrollTop($("#node3data")[0].scrollHeight);
-           $("#node4data").scrollTop($("#node4data")[0].scrollHeight);
+           $.get(BASE_PATH_URL+'/statusnode1', function (data) { $("#node1data").val(data.replace(/[^\x00-\x7F]/g, "")); $("#node1data").scrollTop($("#node1data")[0].scrollHeight); });
+           $.get(BASE_PATH_URL+'/statusnode2', function (data) { $("#node2data").val(data.replace(/[^\x00-\x7F]/g, "")); $("#node2data").scrollTop($("#node2data")[0].scrollHeight); });
+           $.get(BASE_PATH_URL+'/statusnode3', function (data) { $("#node3data").val(data.replace(/[^\x00-\x7F]/g, "")); $("#node3data").scrollTop($("#node3data")[0].scrollHeight); });
+           $.get(BASE_PATH_URL+'/statusnode4', function (data) { $("#node4data").val(data.replace(/[^\x00-\x7F]/g, "")); $("#node4data").scrollTop($("#node4data")[0].scrollHeight); });
         }
+
+        //This uses local routes
+        function getPythonNotificationsInfo()
+        {
+           $.get(BASE_PATH_URL+'/notifications', function (data) { $("#textAreaOfAllPythonNotifications").val(data); $("#textAreaOfAllPythonNotifications").scrollTop($("#textAreaOfAllPythonNotifications")[0].scrollHeight); });
+        }
+
+
     </script>
 </div>

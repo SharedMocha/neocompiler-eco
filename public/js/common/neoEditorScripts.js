@@ -40,6 +40,12 @@
 	});
 
 
+   function firstCharToLowerCase(str) {
+		if(str == "")
+			return "";
+		return str.charAt(0).toLowerCase() + str.slice(1);
+	}
+
     //===============================================================
     $("#formCompile").submit(function (e) {
         $("#compilebtn")[0].disabled = true;
@@ -140,12 +146,12 @@
 
                         if(jsonABI["functions"][i]["name"] != "Main") {
                             option = document.createElement("option");
-                            option.text  = jsonABI["functions"][i]["name"];
-                            option.value = jsonABI["functions"][i]["name"];
+                            option.text  = firstCharToLowerCase(jsonABI["functions"][i]["name"]);
+                            option.value = firstCharToLowerCase(jsonABI["functions"][i]["name"]);
                             inputbox2.add(option);
                             option2 = document.createElement("option");
-                            option2.text  = jsonABI["functions"][i]["name"];
-                            option2.value = jsonABI["functions"][i]["name"];
+                            option2.text  = firstCharToLowerCase(jsonABI["functions"][i]["name"]);
+                            option2.value = firstCharToLowerCase(jsonABI["functions"][i]["name"]);
                             inputboxjs2.add(option2);
                         }
 
@@ -190,25 +196,37 @@
                     // get parameters
                     $("#contractparams")[0].value = "\"\"";
 						  $("#contractparamsjs")[0].value = "";
+						  $("#contractparamnamesjs")[0].value = "";
                     var j = 0;
                     console.log("Parameter count:" + jsonABI["functions"][i]["parameters"].length);
 						  var paramhex = "";
+						  var paramnames = "";
                     for (j = 0; j < jsonABI["functions"][i]["parameters"].length; j++) {
                         var phex = getHexForType(jsonABI["functions"][i]["parameters"][j]["type"]);
                         console.log("parameter[" + j + "]: " + jsonABI["functions"][i]["parameters"][j]["type"] + " -> hex(" + phex + ")");
                         paramhex += phex;
+								paramnames += jsonABI["functions"][i]["parameters"][j]["type"]+"\t";
                     }
 						  if(paramhex.length > 0) {
                     		$("#contractparams")[0].value = paramhex;
 						  		$("#contractparamsjs")[0].value = paramhex;
+								$("#contractparamnamesjs")[0].value = paramnames;
 						  }
+						  else
+						  		$("#contractparamnamesjs")[0].value = "no parameters";
+
                     // set invoke params to many empty strings (at least one is desirable for now)
+						  // PYTHON
                     $("#invokeparams")[0].value = "\"\"";
-						  $("#invokeparamsjs")[0].value = "\"\"";
-                    for (j = 1; j < jsonABI["functions"][i]["parameters"].length; j++) {
+						  for (j = 1; j < jsonABI["functions"][i]["parameters"].length; j++)
                         $("#invokeparams")[0].value += " \"\"";
-								$("#invokeparamsjs")[0].value += " \"\"";
-						  }
+						  // JS
+						  $("#cbx_usearray_js")[0].checked = false;
+						  if(paramhex=="0710") // enable array passing
+						  		$("#cbx_usearray_js")[0].checked = true;
+						  updateArrayInvokeParamsJs(); // update auxiliary check boxes
+						  updateInvokeParamsJs(); // update simple example
+
                     // get return hexcode
                     rettype = jsonABI["functions"][i]["returntype"];
                     $("#contractreturn")[0].value = getHexForType(rettype);
@@ -224,8 +242,8 @@
     //===============================================================
     //Invoke JS
     $("#forminvokejs").submit(function (e) {
-        $("#contractmessages").text("");
-        $("#contractmessagesnotify").text("");
+        //$("#contractmessages").text("");
+        //$("#contractmessagesnotify").text("");
         e.preventDefault(); // Prevents the page from refreshing
         var $this = $(this); // `this` refers to the current form element
         var indata = $(this).serialize();
@@ -235,10 +253,12 @@
 	var attachneojs = Number($("#attachneojs").val());
 	var attachgasjs = Number($("#attachgasjs").val());
 	var invokeScripthash = $("#invokehashjs").val();
-     
+
 	var invokefunc = "";
-	if($("#invokefunctionjs")[0].value != "Main")
-		invokefunc = $("#invokefunctionjs")[0].value;
+	// INVOKE function is already passed as a String parameter!!
+
+	//if($("#invokefunctionjs")[0].value != "Main")
+	//	invokefunc = $("#invokefunctionjs")[0].value;
 
 	var neonJSParams = [];
 	neonJSParams = JSON.parse($("#invokeparamsjs")[0].value);
@@ -251,8 +271,8 @@
     //===============================================================
     //Deploy JS
     $("#formdeployjs").submit(function (e) {
-        $("#contractmessages").text("");
-        $("#contractmessagesnotify").text("");
+        //$("#contractmessages").text("");
+        //$("#contractmessagesnotify").text("");
         e.preventDefault(); // Prevents the page from refreshing
         var $this = $(this); // `this` refers to the current form element
         var indata = $(this).serialize();
@@ -313,10 +333,14 @@
                     $("#neonodeurl")[0].value, // Gets the URL to sent the post to
                     '{ "jsonrpc": "2.0", "id": 5, "method": "getcontractstate", "params": ["'+sthash+'"] }', // Serializes form data in standard format
                     function (data2) {
-                      if(data2.result)
-                        $("#gsf_contractvaluehex")[0].value = "contract exists!";
+                      if(data2.result) { // contract exists
+								 if(data2.result.properties.storage)
+                             $("#gsf_contractvaluehex")[0].value = "contract exists (but key does not)!";
+								 else
+                             $("#gsf_contractvaluehex")[0].value = "contract exists (but did not pay for Storage on deploy)!";
+							 }
                       else if(data2.error.code == -100)
-                        $("#gsf_contractvaluehex")[0].value = "contract does not exist!";
+                        $("#gsf_contractvaluehex")[0].value = "contract does not exist (must deploy first)!";
                       else {
                         $("#gsf_contractvaluehex")[0].value = "some strange error happened!";
                         console.log(data2);
@@ -491,20 +515,33 @@
     	document.getElementById("divRelayedTXs").innerHTML = "";
     	var table = document.createElement("table");
       table.setAttribute('class', 'table');
+      table.style.width = '20px';
 
       var row = table.insertRow(-1);
       var headers1 = document.createElement('div');
       var headers2 = document.createElement('div');
-      var headers3 = document.createElement('div');
+      var headersTxType = document.createElement('div');
+      var headerstxScriptHash = document.createElement('div');
+      var headerstxParams = document.createElement('div');
       var headers4 = document.createElement('div');
+      var headersAppLog = document.createElement('div');
+      var headersRestore = document.createElement('div');
       headers1.innerHTML = "<b> ID </b>";
       row.insertCell(-1).appendChild(headers1);
       headers2.innerHTML = "<b> TX </b>";
       row.insertCell(-1).appendChild(headers2);
-      headers3.innerHTML = "<b> Note </b>";
-      row.insertCell(-1).appendChild(headers3);
+      headersAppLog.innerHTML = "<b> AppLog </b>";
+      row.insertCell(-1).appendChild(headersAppLog);
+      headersTxType.innerHTML = "<b> txType </b>";
+      row.insertCell(-1).appendChild(headersTxType);
+      headerstxScriptHash.innerHTML = "<b> txScriptHash </b>";
+      row.insertCell(-1).appendChild(headerstxScriptHash);
+      headerstxParams.innerHTML = "<b> txParams </b>";
+      row.insertCell(-1).appendChild(headerstxParams);
       headers4.innerHTML = "<b> Blockchained </b>";
       row.insertCell(-1).appendChild(headers4);
+      headersRestore.innerHTML = "<b> InvokeRestore </b>";
+      row.insertCell(-1).appendChild(headersRestore);
 
       for (i = 0; i < vecRelayedTXs.length; i++) {
           var txRow = table.insertRow(-1);
@@ -518,27 +555,62 @@
           //b.onclick = function () {alert(this.value);};
           b.onclick = function () {buttonRemoveTX(this.value);};
           b.innerHTML = i;
-
           txRow.insertCell(-1).appendChild(b);
 
-          var link = document.createElement("a");
+          var txIDCell = document.createElement("a");
           var urlToGet = BASE_PATH_NEOSCAN + "/api/main_net/v1/get_transaction/" + vecRelayedTXs[i].tx;
-          link.appendChild(document.createTextNode(vecRelayedTXs[i].tx));
-          link.href = urlToGet;
-          link.target = '_blank';
-          link.onclick = urlToGet;
-          txRow.insertCell(-1).appendChild(link);
+          txIDCell.text = vecRelayedTXs[i].tx.slice(0,5) + "..." + vecRelayedTXs[i].tx.slice(-5);
+          txIDCell.href = urlToGet;
+          txIDCell.target = '_blank';
+          txIDCell.onclick = urlToGet;
+          txIDCell.style.width = '70px';
+	  txIDCell.style.display = 'block';
+          txRow.insertCell(-1).appendChild(txIDCell);
 
-          var input = document.createElement("input");
+          var bGoToAppLog = document.createElement('button');
+          bGoToAppLog.setAttribute('content', 'test content');
+          bGoToAppLog.setAttribute('class', 'btn btn-info');
+          bGoToAppLog.setAttribute('value', i);
+          bGoToAppLog.onclick = function () {callAppLog(this.value);};
+          bGoToAppLog.innerHTML = '?';
+          txRow.insertCell(-1).appendChild(bGoToAppLog);
+
+          var inputTxType = document.createElement("input");
           //input.setAttribute("type", "hidden");
-          input.setAttribute("name", "textNote"+i);
-          input.setAttribute("value", vecRelayedTXs[i].note);
-          txRow.insertCell(-1).appendChild(input);
+          inputTxType.setAttribute("name", "textTxType"+i);
+          inputTxType.setAttribute("readonly","true");
+          inputTxType.style.width = '70px';
+          inputTxType.setAttribute("value", vecRelayedTXs[i].txType);
+          txRow.insertCell(-1).appendChild(inputTxType);
+
+          var inputSH = document.createElement("input");
+          //input.setAttribute("type", "hidden");
+          inputSH.setAttribute("name", "textScriptHash"+i);
+          inputSH.setAttribute("readonly","true");
+          inputSH.setAttribute("value", vecRelayedTXs[i].txScriptHash);
+          txRow.insertCell(-1).appendChild(inputSH);
+
+          var inputParams = document.createElement("input");
+          //input.setAttribute("type", "hidden");
+          inputParams.setAttribute("name", "textParams"+i);
+          inputParams.setAttribute("readonly","true");
+          inputParams.setAttribute("value", vecRelayedTXs[i].txParams);
+          txRow.insertCell(-1).appendChild(inputParams);
+
 
           //Check activation status
           var activationStatus = document.createElement('div');
           activationStatus.setAttribute('id', "activationStatus"+i);
           activationStatus.innerHTML = "-";
+          txRow.insertCell(-1).appendChild(activationStatus);
+
+          var bRestore = document.createElement('button');
+          bRestore.setAttribute('content', 'test content');
+          bRestore.setAttribute('class', 'btn btn-info');
+          bRestore.setAttribute('value', i);
+          bRestore.onclick = function () {restoreTX(this.value);};
+          bRestore.innerHTML = ':)';
+          txRow.insertCell(-1).appendChild(bRestore);
 
           //This draw can be deprecated
           /*$.getJSON(urlToGet, function(result) {
@@ -552,13 +624,48 @@
               activationStatus.innerHTML = "<font color=\"red\">FAILED</font>";
           });*/
 
-          txRow.insertCell(-1).appendChild(activationStatus);
+
           //Check activation status ends
     	}//Finishes loop that draws each relayed transaction
 
       document.getElementById("divRelayedTXs").appendChild(table);
       searchForTXs();
     }//Finishe DrawRules function
+   //===============================================================
+
+  //===============================================================
+   //Call app log
+   function callAppLog(txID){
+      if(txID < vecRelayedTXs.length && txID > -1)
+      {
+	     var txHash = vecRelayedTXs[txID].tx;
+	     var appLogJson = [];
+	     appLogJson.push({"jsonrpc": "2.0", "id": 5, "method": "getapplicationlog", "params": [vecRelayedTXs[txID].tx] });
+	     $("#txtRPCJson").val(JSON.stringify(appLogJson));
+	     $('#btnCallJsonRPC').click();
+	     $("#pillstab").children().eq(2).find('a').tab('show');
+	     document.getElementById('divFormJsonOut').scrollIntoView();
+      }else{
+        alert("Cannot get log of TX with ID " + txID + " from set of relayed transactions with size " + vecRelayedTXs.length)
+      }
+   }
+   //===============================================================
+
+  //===============================================================
+   //Restore tx
+   function restoreTX(txID){
+      if(txID < vecRelayedTXs.length && txID > -1)
+      {
+	     if(vecRelayedTXs[txID].txType === "Invoke")
+	     {
+	     	$("#invokehashjs").val(vecRelayedTXs[txID].txScriptHash);
+	     	$("#invokeparamsjs").val(vecRelayedTXs[txID].txParams);
+	     }
+
+      }else{
+        alert("Cannot restore of TX with ID " + txID + " from set of relayed transactions with size " + vecRelayedTXs.length)
+      }
+   }
    //===============================================================
 
   //===============================================================
@@ -584,8 +691,9 @@
               document.getElementById("activationStatus"+indexToUpdate).innerHTML = "<font color=\"red\">FAILED</font>";
           });
    }
-   //===============================================================
+  //===============================================================
 
+   //===============================================================
    function convertParam(type, value) {
      if(type == "String")
         return "\""+value+"\"";
@@ -597,7 +705,9 @@
         return ""+Number(value);
      return "";
    }
+   //===============================================================
 
+//===============================================================
    // self update python invoke parameters
    function updateInvokeParamsPy() {
      invokecmd = "";
@@ -645,42 +755,65 @@
 
       $("#invokeparams")[0].value = invokecmd;
    }
+//===============================================================
 
-
-	// self update neonjs invoke parameters (in json format)
+//===============================================================
+// self update neonjs invoke parameters (in json format)
    function updateInvokeParamsJs() {
      console.log("updating js json...");
      invokefunc = "";
      if($("#invokefunctionjs")[0].value != "Main")
         invokefunc = $("#invokefunctionjs")[0].value; // method
+	  var arrayparam = [];
 
      console.log("function is "+invokefunc);
      var neonJSParams = [];
-     countparam = 0;
+
+	  if(invokefunc != "")
+	      pushParams(neonJSParams, "String", invokefunc);
+
      if($("#invokeparamjsbox1")[0].value != "None") {
-        pushParams(neonJSParams, $("#invokeparamjsbox1")[0].value, $("#invokeparamsjs1")[0].value);
-        countparam++;
-	console.log("step1");
+		  if($("#cbx_inarray_js1")[0].checked)
+		  		pushParams(arrayparam, $("#invokeparamjsbox1")[0].value, $("#invokeparamsjs1")[0].value);
+		  else
+        		pushParams(neonJSParams, $("#invokeparamjsbox1")[0].value, $("#invokeparamsjs1")[0].value);
      }
      if($("#invokeparamjsbox2")[0].value != "None") {
-        pushParams(neonJSParams, $("#invokeparamjsbox2")[0].value, $("#invokeparamsjs2")[0].value);
-        countparam++;
-	console.log("step2");
+		  if($("#cbx_inarray_js2")[0].checked)
+		  		pushParams(arrayparam, $("#invokeparamjsbox2")[0].value, $("#invokeparamsjs2")[0].value);
+		  else
+        		pushParams(neonJSParams, $("#invokeparamjsbox2")[0].value, $("#invokeparamsjs2")[0].value);
      }
      if($("#invokeparamjsbox3")[0].value != "None") {
-        pushParams(neonJSParams, $("#invokeparamjsbox3")[0].value, $("#invokeparamsjs3")[0].value);
-        countparam++;
-	console.log("step3");
+		  if($("#cbx_inarray_js3")[0].checked)
+		  		pushParams(arrayparam, $("#invokeparamjsbox3")[0].value, $("#invokeparamsjs3")[0].value);
+		  else
+        		pushParams(neonJSParams, $("#invokeparamjsbox3")[0].value, $("#invokeparamsjs3")[0].value);
      }
 
-	  invokecmd = "";
-	  //invokecmd += invokefunc;
-	  //invokecmd += " ";
+	  if($("#cbx_usearray_js")[0].checked)
+	  		pushParams(neonJSParams, 'Array', arrayparam);
 
-      invokecmd += JSON.stringify(neonJSParams);
-
-      $("#invokeparamsjs")[0].value = invokecmd;
+      $("#invokeparamsjs")[0].value = JSON.stringify(neonJSParams);
    }
 
-
-   // ==============================================================
+   // block and unblock array checkboxes
+	function updateArrayInvokeParamsJs() {
+		if($("#cbx_usearray_js")[0].checked) {
+			$("#cbx_inarray_js1")[0].checked = true;
+			$("#cbx_inarray_js1")[0].disabled = false;
+			$("#cbx_inarray_js2")[0].checked = true;
+			$("#cbx_inarray_js2")[0].disabled = false;
+			$("#cbx_inarray_js3")[0].checked = true;
+			$("#cbx_inarray_js3")[0].disabled = false;
+		}
+		else {
+			$("#cbx_inarray_js1")[0].checked = false;
+			$("#cbx_inarray_js1")[0].disabled = true;
+			$("#cbx_inarray_js2")[0].checked = false;
+			$("#cbx_inarray_js2")[0].disabled = true;
+			$("#cbx_inarray_js3")[0].checked = false;
+			$("#cbx_inarray_js3")[0].disabled = true;
+		}
+	}
+// ==============================================================
