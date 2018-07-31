@@ -13,10 +13,18 @@
       "SslCertPassword": ""
     },
     "UnlockWallet": {
-      "Path": "./wallet4.json",
-      "Password": "four",
-      "StartConsensus": true,
-      "IsActive": true
+      "Path": "",
+      "Password": "",
+      "StartConsensus": false,
+      "IsActive": false
+    },
+    "PluginConfiguration": {
+      "MaxTransactionsPerBlock": 500,
+      "MaxFreeTransactionsPerBlock": 20,
+      "BlockedAccounts": {
+        "Type": "AllowAll",
+        "List": []
+      }
     }
   }
 }

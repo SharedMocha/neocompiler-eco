@@ -13,10 +13,18 @@
       "SslCertPassword": ""
     },
     "UnlockWallet": {
-      "Path": "./wallet1.json",
-      "Password": "one",
-      "StartConsensus": true,
-      "IsActive": true
+      "Path": "",
+      "Password": "",
+      "StartConsensus": false,
+      "IsActive": false
+    },
+    "PluginConfiguration": {
+      "MaxTransactionsPerBlock": 500,
+      "MaxFreeTransactionsPerBlock": 20,
+      "BlockedAccounts": {
+        "Type": "AllowAll",
+        "List": []
+      }
     }
   }
 }
